@@ -48,7 +48,7 @@ Clone the repository and open `VideoSpriteSheet.csproj` in Visual Studio, then h
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/VideoSpriteSheet.git
+git clone https://github.com/CodeCraftDevHQ/VideoSpriteSheet.git
 
 # Navigate to the directory
 cd VideoSpriteSheet
