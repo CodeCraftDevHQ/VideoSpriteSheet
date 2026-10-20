@@ -40,7 +40,7 @@ public sealed class VideoSource : IDisposable
             {
                 capture.Dispose();
                 TryDelete(tempCopy);
-                throw new InvalidOperationException("فایل ویدیو باز نشد. فرمت یا کدک ویدیو پشتیبانی نمی‌شود.");
+                throw new InvalidOperationException(Loc.Get("ErrVideoOpen"));
             }
         }
 
@@ -49,17 +49,23 @@ public sealed class VideoSource : IDisposable
         if (source.Width <= 0 || source.Height <= 0)
         {
             source.Dispose();
-            throw new InvalidOperationException("ابعاد ویدیو قابل تشخیص نیست.");
+            throw new InvalidOperationException(Loc.Get("ErrVideoSize"));
         }
 
         return source;
     }
 
-    public IEnumerable<(int Index, Mat Frame)> ReadFrames(int step, CancellationToken cancellationToken)
+    public IEnumerable<(int Index, Mat Frame)> ReadFrames(int step, int startFrame, int endFrame, CancellationToken cancellationToken)
     {
         var index = 0;
 
-        while (true)
+        if (startFrame > 0)
+        {
+            _capture.PosFrames = startFrame;
+            index = (int)_capture.PosFrames;
+        }
+
+        while (index < endFrame)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -68,7 +74,7 @@ public sealed class VideoSource : IDisposable
                 yield break;
             }
 
-            if (index % step == 0)
+            if (index >= startFrame && (index - startFrame) % step == 0)
             {
                 var frame = new Mat();
 

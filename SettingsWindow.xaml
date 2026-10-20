@@ -1,0 +1,27 @@
+<Window x:Class="VideoSpriteSheet.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:VideoSpriteSheet.Services"
+        Title="{loc:T Settings}"
+        Width="380" SizeToContent="Height"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        FlowDirection="{Binding FlowDirection, Source={x:Static loc:Loc.Instance}}"
+        WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="16">
+        <TextBlock Text="{loc:T Language}" Margin="0,0,0,4"/>
+        <ComboBox x:Name="LanguageCombo" Margin="0,0,0,14" SelectionChanged="Language_Changed">
+            <ComboBoxItem Content="فارسی"/>
+            <ComboBoxItem Content="English"/>
+        </ComboBox>
+
+        <TextBlock Text="{loc:T Theme}" Margin="0,0,0,4"/>
+        <ComboBox x:Name="ThemeCombo" Margin="0,0,0,18" SelectionChanged="Theme_Changed">
+            <ComboBoxItem Content="{loc:T ThemeSystem}"/>
+            <ComboBoxItem Content="{loc:T ThemeLight}"/>
+            <ComboBoxItem Content="{loc:T ThemeDark}"/>
+        </ComboBox>
+
+        <Button Content="{loc:T Close}" HorizontalAlignment="Left" Padding="22,6" Click="Close_Click"/>
+    </StackPanel>
+</Window>

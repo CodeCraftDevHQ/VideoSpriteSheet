@@ -23,7 +23,7 @@ public sealed class BackgroundRemover : IDisposable
     {
         if (!File.Exists(modelPath))
         {
-            throw new FileNotFoundException("فایل مدل حذف بکگراند پیدا نشد.", modelPath);
+            throw new FileNotFoundException(Loc.Get("ErrModelFile"), modelPath);
         }
 
         _sharpness = Math.Max(1.0, sharpness);

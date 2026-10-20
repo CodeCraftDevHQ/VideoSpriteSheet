@@ -13,6 +13,8 @@ public sealed class ProcessingOptions
     public string VideoPath { get; set; } = string.Empty;
     public string OutputFolder { get; set; } = string.Empty;
     public int FrameStep { get; set; } = 1;
+    public double StartSeconds { get; set; }
+    public double? EndSeconds { get; set; }
     public int ScalePercent { get; set; } = 100;
     public bool RemoveBackground { get; set; } = true;
     public string ModelPath { get; set; } = string.Empty;

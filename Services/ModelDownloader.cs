@@ -1,21 +1,49 @@
+using VideoSpriteSheet.Models;
+
 namespace VideoSpriteSheet.Services;
+
+public sealed record ModelEntry(string Name, string Url, string FileName, NormalizationPreset Preset)
+{
+    public override string ToString() => Name;
+}
+
+public static class ModelCatalog
+{
+    public static IReadOnlyList<ModelEntry> All { get; } = new[]
+    {
+        new ModelEntry(
+            "RMBG-1.4 (176 MB, non-commercial)",
+            "https://huggingface.co/briaai/RMBG-1.4/resolve/main/onnx/model.onnx",
+            "rmbg-1.4.onnx",
+            NormalizationPreset.Rmbg14),
+        new ModelEntry(
+            "BiRefNet Lite (MIT)",
+            "https://huggingface.co/onnx-community/BiRefNet_lite-ONNX/resolve/main/onnx/model.onnx",
+            "birefnet-lite.onnx",
+            NormalizationPreset.ImageNet),
+        new ModelEntry(
+            "BiRefNet (973 MB, MIT)",
+            "https://huggingface.co/onnx-community/BiRefNet-ONNX/resolve/main/onnx/model.onnx",
+            "birefnet.onnx",
+            NormalizationPreset.ImageNet)
+    };
+}
 
 public static class ModelDownloader
 {
-    public const string Rmbg14Url = "https://huggingface.co/briaai/RMBG-1.4/resolve/main/onnx/model.onnx";
-
-    public static string DefaultModelPath => Path.Combine(
+    public static string ModelsFolder => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "VideoSpriteSheet",
-        "models",
-        "rmbg-1.4.onnx");
+        "models");
+
+    public static string PathFor(ModelEntry entry) => Path.Combine(ModelsFolder, entry.FileName);
 
     public static async Task DownloadAsync(string url, string target, IProgress<double> progress, CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(target)!);
         var partial = target + ".part";
 
-        using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
+        using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(60) };
         using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         response.EnsureSuccessStatusCode();
 

@@ -9,44 +9,121 @@ namespace VideoSpriteSheet;
 
 public partial class MainWindow : Window
 {
+    private static readonly HashSet<string> VideoExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".mp4", ".mov", ".avi", ".mkv", ".webm", ".wmv", ".m4v", ".flv"
+    };
+
     private CancellationTokenSource? _cts;
     private VideoInfo? _videoInfo;
+    private string? _videoError;
     private string? _lastOutputFolder;
 
     public MainWindow()
     {
         InitializeComponent();
 
+        DownloadModelCombo.ItemsSource = ModelCatalog.All;
+        DownloadModelCombo.SelectedIndex = 0;
+
         OutputPathBox.Text = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
             "VideoSpriteSheet");
 
-        if (File.Exists(ModelDownloader.DefaultModelPath))
+        foreach (var entry in ModelCatalog.All)
         {
-            ModelPathBox.Text = ModelDownloader.DefaultModelPath;
+            if (File.Exists(ModelDownloader.PathFor(entry)))
+            {
+                UseModel(entry);
+                break;
+            }
         }
+
+        StatusText.Text = Loc.Get("Ready");
+        Loc.Instance.LanguageChanged += OnLanguageChanged;
+        Closed += (_, _) => Loc.Instance.LanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged()
+    {
+        RefreshVideoInfo();
+        UpdateEstimate();
+    }
+
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        new SettingsWindow { Owner = this }.ShowDialog();
+    }
+
+    private void Window_PreviewDragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = _cts is null && GetDroppedFile(e) is not null ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void Window_PreviewDrop(object sender, DragEventArgs e)
+    {
+        e.Handled = true;
+
+        if (_cts is not null)
+        {
+            return;
+        }
+
+        var path = GetDroppedFile(e);
+
+        if (path is null)
+        {
+            StatusText.Text = Loc.Get("ErrUnsupportedDrop");
+            return;
+        }
+
+        if (VideoExtensions.Contains(Path.GetExtension(path)))
+        {
+            SetVideo(path);
+        }
+        else
+        {
+            StatusText.Text = Loc.Get("ErrUnsupportedDrop");
+        }
+    }
+
+    private static string? GetDroppedFile(DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            return null;
+        }
+
+        return (e.Data.GetData(DataFormats.FileDrop) as string[])?.FirstOrDefault();
     }
 
     private void BrowseVideo_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
         {
-            Title = "انتخاب ویدیو",
-            Filter = "ویدیو|*.mp4;*.mov;*.avi;*.mkv;*.webm;*.wmv;*.m4v;*.flv|همه فایل‌ها|*.*"
+            Title = Loc.Get("BrowseVideo"),
+            Filter = Loc.Get("VideoFilter")
         };
 
-        if (dialog.ShowDialog(this) != true)
+        if (dialog.ShowDialog(this) == true)
         {
-            return;
+            SetVideo(dialog.FileName);
         }
+    }
 
-        VideoPathBox.Text = dialog.FileName;
-        LoadVideoInfo(dialog.FileName);
+    private void SetVideo(string path)
+    {
+        VideoPathBox.Text = path;
+        StartTimeBox.Text = string.Empty;
+        EndTimeBox.Text = string.Empty;
+        StatusText.Text = Loc.Get("Ready");
+        LoadVideoInfo(path);
     }
 
     private void BrowseOutput_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFolderDialog { Title = "انتخاب پوشه خروجی" };
+        var dialog = new OpenFolderDialog { Title = Loc.Get("PickOutputTitle") };
 
         if (dialog.ShowDialog(this) == true)
         {
@@ -58,8 +135,8 @@ public partial class MainWindow : Window
     {
         var dialog = new OpenFileDialog
         {
-            Title = "انتخاب مدل ONNX",
-            Filter = "مدل ONNX|*.onnx"
+            Title = Loc.Get("PickModelTitle"),
+            Filter = Loc.Get("ModelFilter")
         };
 
         if (dialog.ShowDialog(this) == true)
@@ -68,32 +145,43 @@ public partial class MainWindow : Window
         }
     }
 
+    private void UseModel(ModelEntry entry)
+    {
+        ModelPathBox.Text = ModelDownloader.PathFor(entry);
+        PresetCombo.SelectedIndex = entry.Preset == NormalizationPreset.ImageNet ? 1 : 0;
+    }
+
     private async void DownloadModel_Click(object sender, RoutedEventArgs e)
     {
-        var target = ModelDownloader.DefaultModelPath;
+        if (DownloadModelCombo.SelectedItem is not ModelEntry entry)
+        {
+            return;
+        }
+
+        var target = ModelDownloader.PathFor(entry);
 
         if (File.Exists(target))
         {
-            ModelPathBox.Text = target;
-            StatusText.Text = "مدل از قبل دانلود شده است.";
+            UseModel(entry);
+            StatusText.Text = Loc.Get("ModelExists");
             return;
         }
 
         DownloadModelButton.IsEnabled = false;
         DownloadProgress.Visibility = Visibility.Visible;
         DownloadProgress.Value = 0;
-        StatusText.Text = "در حال دانلود مدل...";
+        StatusText.Text = Loc.Get("Downloading");
 
         try
         {
             var progress = new Progress<double>(value => DownloadProgress.Value = value);
-            await ModelDownloader.DownloadAsync(ModelDownloader.Rmbg14Url, target, progress, CancellationToken.None);
-            ModelPathBox.Text = target;
-            StatusText.Text = "دانلود مدل کامل شد.";
+            await ModelDownloader.DownloadAsync(entry.Url, target, progress, CancellationToken.None);
+            UseModel(entry);
+            StatusText.Text = Loc.Get("DownloadDone");
         }
         catch (Exception ex)
         {
-            StatusText.Text = "دانلود مدل ناموفق بود: " + ex.Message;
+            StatusText.Text = Loc.Format("DownloadFail", ex.Message);
         }
         finally
         {
@@ -108,15 +196,31 @@ public partial class MainWindow : Window
         {
             using var video = VideoSource.Open(path);
             _videoInfo = video.Info;
-            VideoInfoText.Text = $"{_videoInfo.Width}×{_videoInfo.Height} — {_videoInfo.Fps:0.##} فریم بر ثانیه — {_videoInfo.FrameCount} فریم";
+            _videoError = null;
         }
         catch (Exception ex)
         {
             _videoInfo = null;
-            VideoInfoText.Text = ex.Message;
+            _videoError = ex.Message;
         }
 
+        RefreshVideoInfo();
         UpdateEstimate();
+    }
+
+    private void RefreshVideoInfo()
+    {
+        if (_videoInfo is null)
+        {
+            VideoInfoText.Text = _videoError ?? string.Empty;
+            return;
+        }
+
+        var duration = _videoInfo.FrameCount > 0
+            ? TimeSpan.FromSeconds(_videoInfo.FrameCount / _videoInfo.Fps).ToString(@"hh\:mm\:ss")
+            : "?";
+
+        VideoInfoText.Text = Loc.Format("VideoInfo", _videoInfo.Width, _videoInfo.Height, _videoInfo.Fps, _videoInfo.FrameCount, duration);
     }
 
     private void Estimate_Changed(object sender, TextChangedEventArgs e)
@@ -126,18 +230,29 @@ public partial class MainWindow : Window
 
     private void UpdateEstimate()
     {
-        if (EstimateText is null)
+        if (EstimateText is null || StepBox is null || StartTimeBox is null || EndTimeBox is null)
         {
             return;
         }
+
+        EstimateText.Text = string.Empty;
 
         if (_videoInfo is null || _videoInfo.FrameCount <= 0 || !TryParse(StepBox.Text, 1, 100000, out var step))
         {
-            EstimateText.Text = string.Empty;
             return;
         }
 
-        EstimateText.Text = $"≈ {(_videoInfo.FrameCount + step - 1) / step} عکس";
+        if (!ImageHelpers.TryParseTime(StartTimeBox.Text, out var start) || !ImageHelpers.TryParseTime(EndTimeBox.Text, out var end))
+        {
+            return;
+        }
+
+        var fps = _videoInfo.Fps;
+        var startFrame = (int)Math.Round((start ?? 0) * fps);
+        var endFrame = end is null ? _videoInfo.FrameCount : Math.Min(_videoInfo.FrameCount, (int)Math.Round(end.Value * fps));
+        var count = Math.Max(0, endFrame - startFrame);
+
+        EstimateText.Text = Loc.Format("Estimate", (count + step - 1) / step);
     }
 
     private void ScaleSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -152,7 +267,7 @@ public partial class MainWindow : Window
     {
         if (SharpText is not null)
         {
-            SharpText.Text = e.NewValue.ToString("0.0");
+            SharpText.Text = e.NewValue.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
         }
     }
 
@@ -168,19 +283,31 @@ public partial class MainWindow : Window
     {
         if (!TryParse(StepBox.Text, 1, 100000, out var step))
         {
-            StatusText.Text = "مقدار «هر چند فریم» باید عدد صحیح مثبت باشد.";
+            StatusText.Text = Loc.Get("ErrStep");
             return;
         }
 
         if (!TryParse(ColumnsBox.Text, 1, 1000, out var columns))
         {
-            StatusText.Text = "تعداد ستون باید عدد صحیح مثبت باشد.";
+            StatusText.Text = Loc.Get("ErrColumns");
             return;
         }
 
         if (!TryParse(PaddingBox.Text, 0, 1000, out var padding))
         {
-            StatusText.Text = "مقدار فاصله باید عدد صحیح صفر یا بیشتر باشد.";
+            StatusText.Text = Loc.Get("ErrPadding");
+            return;
+        }
+
+        if (!ImageHelpers.TryParseTime(StartTimeBox.Text, out var start) || !ImageHelpers.TryParseTime(EndTimeBox.Text, out var end))
+        {
+            StatusText.Text = Loc.Get("ErrTime");
+            return;
+        }
+
+        if (end is not null && end.Value <= (start ?? 0))
+        {
+            StatusText.Text = Loc.Get("ErrRange");
             return;
         }
 
@@ -189,6 +316,8 @@ public partial class MainWindow : Window
             VideoPath = VideoPathBox.Text,
             OutputFolder = OutputPathBox.Text.Trim(),
             FrameStep = step,
+            StartSeconds = start ?? 0,
+            EndSeconds = end,
             ScalePercent = (int)ScaleSlider.Value,
             RemoveBackground = RemoveBgCheck.IsChecked == true,
             ModelPath = ModelPathBox.Text.Trim(),
@@ -227,32 +356,32 @@ public partial class MainWindow : Window
             MainProgress.Value = 1;
             OpenFolderButton.IsEnabled = true;
 
-            var parts = new List<string> { $"{result.FrameCount} فریم پردازش شد" };
+            var parts = new List<string> { Loc.Format("ResultFrames", result.FrameCount) };
 
             if (result.SheetPath is not null)
             {
-                parts.Add("اسپرایت‌شیت: " + result.SheetPath);
+                parts.Add(Loc.Format("ResultSheet", result.SheetPath));
             }
 
             if (result.FramesFolder is not null)
             {
-                parts.Add("عکس‌ها: " + result.FramesFolder);
+                parts.Add(Loc.Format("ResultFolder", result.FramesFolder));
             }
 
             if (options.RemoveBackground)
             {
-                parts.Add("پردازنده: " + result.Provider);
+                parts.Add(Loc.Format("ResultProvider", result.Provider));
             }
 
             StatusText.Text = string.Join(Environment.NewLine, parts);
         }
         catch (OperationCanceledException)
         {
-            StatusText.Text = "عملیات لغو شد.";
+            StatusText.Text = Loc.Get("Cancelled");
         }
         catch (Exception ex)
         {
-            StatusText.Text = "خطا: " + ex.Message;
+            StatusText.Text = Loc.Format("ErrorPrefix", ex.Message);
         }
         finally
         {

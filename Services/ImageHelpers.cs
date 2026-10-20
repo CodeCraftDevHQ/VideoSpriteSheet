@@ -34,6 +34,39 @@ public static class ImageHelpers
         return ToBitmap(bytes);
     }
 
+    public static bool TryParseTime(string text, out double? seconds)
+    {
+        seconds = null;
+        var value = NormalizeDigits(text).Replace('٫', '.').Replace(',', '.');
+
+        if (value.Length == 0)
+        {
+            return true;
+        }
+
+        var parts = value.Split(':');
+
+        if (parts.Length > 3)
+        {
+            return false;
+        }
+
+        double total = 0;
+
+        foreach (var part in parts)
+        {
+            if (!double.TryParse(part.Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var number) || number < 0)
+            {
+                return false;
+            }
+
+            total = total * 60 + number;
+        }
+
+        seconds = total;
+        return true;
+    }
+
     public static string NormalizeDigits(string text)
     {
         var chars = text.ToCharArray();

@@ -27,14 +27,34 @@ public sealed class SpriteSheetPipeline
 
         using var video = VideoSource.Open(options.VideoPath);
 
-        var total = video.FrameCount > 0 ? (video.FrameCount + step - 1) / step : 0;
+        var startFrame = (int)Math.Round(Math.Max(0, options.StartSeconds) * video.Fps);
+        var endFrame = options.EndSeconds is { } endSeconds
+            ? (int)Math.Round(endSeconds * video.Fps)
+            : int.MaxValue;
+
+        if (video.FrameCount > 0)
+        {
+            if (startFrame >= video.FrameCount)
+            {
+                throw new InvalidOperationException(Loc.Get("ErrStartBeyond"));
+            }
+
+            endFrame = Math.Min(endFrame, video.FrameCount);
+        }
+
+        if (endFrame <= startFrame)
+        {
+            throw new InvalidOperationException(Loc.Get("ErrRange"));
+        }
+
+        var total = endFrame == int.MaxValue ? 0 : (endFrame - startFrame + step - 1) / step;
 
         BackgroundRemover? remover = null;
-        var provider = "—";
+        var provider = "-";
 
         if (options.RemoveBackground)
         {
-            progress.Report(new ProgressInfo(0, total, "در حال بارگذاری مدل..."));
+            progress.Report(new ProgressInfo(0, total, Loc.Get("LoadingModel")));
             remover = new BackgroundRemover(options.ModelPath, options.UseGpu, options.Normalization, options.EdgeSharpness);
             provider = remover.Provider;
         }
@@ -44,7 +64,7 @@ public sealed class SpriteSheetPipeline
 
         try
         {
-            foreach (var (index, rawFrame) in video.ReadFrames(step, cancellationToken))
+            foreach (var (index, rawFrame) in video.ReadFrames(step, startFrame, endFrame, cancellationToken))
             {
                 using var frame = rawFrame;
                 using var scaled = Scale(frame, options.ScalePercent);
@@ -59,8 +79,11 @@ public sealed class SpriteSheetPipeline
                 }
 
                 var processed = encodedFrames.Count;
+                var elapsed = stopwatch.Elapsed.ToString(@"mm\:ss");
                 var preview = ImageHelpers.MakePreview(result);
-                var message = $"فریم {processed}" + (total > 0 ? $" از {total}" : string.Empty) + $" — {stopwatch.Elapsed:mm\\:ss}";
+                var message = total > 0
+                    ? Loc.Format("FrameProgress", processed, total, elapsed)
+                    : Loc.Format("FrameProgressNoTotal", processed, elapsed);
                 progress.Report(new ProgressInfo(processed, total, message, preview));
             }
         }
@@ -73,19 +96,22 @@ public sealed class SpriteSheetPipeline
 
         if (encodedFrames.Count == 0)
         {
-            throw new InvalidOperationException("هیچ فریمی از ویدیو خوانده نشد.");
+            throw new InvalidOperationException(Loc.Get("ErrNoFrames"));
         }
 
         string? sheetPath = null;
 
         if (options.SaveSpriteSheet)
         {
-            progress.Report(new ProgressInfo(encodedFrames.Count, encodedFrames.Count, "در حال ساخت اسپرایت‌شیت..."));
+            progress.Report(new ProgressInfo(encodedFrames.Count, encodedFrames.Count, Loc.Get("BuildingSheet")));
             sheetPath = Path.Combine(options.OutputFolder, baseName + "_spritesheet.png");
             BuildSheet(encodedFrames, options.Columns, options.Padding, sheetPath, cancellationToken);
         }
 
-        progress.Report(new ProgressInfo(encodedFrames.Count, encodedFrames.Count, $"پایان — {encodedFrames.Count} فریم در {stopwatch.Elapsed:mm\\:ss}"));
+        progress.Report(new ProgressInfo(
+            encodedFrames.Count,
+            encodedFrames.Count,
+            Loc.Format("Done", encodedFrames.Count, stopwatch.Elapsed.ToString(@"mm\:ss"))));
 
         return new ProcessingResult(encodedFrames.Count, sheetPath, framesFolder, provider);
     }
@@ -94,22 +120,22 @@ public sealed class SpriteSheetPipeline
     {
         if (!File.Exists(options.VideoPath))
         {
-            throw new InvalidOperationException("فایل ویدیو انتخاب نشده یا وجود ندارد.");
+            throw new InvalidOperationException(Loc.Get("ErrVideoMissing"));
         }
 
         if (string.IsNullOrWhiteSpace(options.OutputFolder))
         {
-            throw new InvalidOperationException("پوشه خروجی انتخاب نشده است.");
+            throw new InvalidOperationException(Loc.Get("ErrOutputMissing"));
         }
 
         if (!options.SaveIndividualFrames && !options.SaveSpriteSheet)
         {
-            throw new InvalidOperationException("حداقل یکی از گزینه‌های ذخیره تک‌تک عکس‌ها یا اسپرایت‌شیت را فعال کنید.");
+            throw new InvalidOperationException(Loc.Get("ErrNothingToSave"));
         }
 
         if (options.RemoveBackground && !File.Exists(options.ModelPath))
         {
-            throw new InvalidOperationException("برای حذف بکگراند باید فایل مدل ONNX را انتخاب یا دانلود کنید.");
+            throw new InvalidOperationException(Loc.Get("ErrModelMissing"));
         }
     }
 
@@ -149,8 +175,7 @@ public sealed class SpriteSheetPipeline
 
         if (bytes > MaxSheetBytes)
         {
-            throw new InvalidOperationException(
-                $"اسپرایت‌شیت بسیار بزرگ می‌شود ({sheetWidth}×{sheetHeight}). درصد اندازه را کم کنید، فاصله فریم‌ها را بیشتر کنید یا تعداد ستون‌ها را تغییر دهید.");
+            throw new InvalidOperationException(Loc.Format("ErrSheetTooBig", sheetWidth, sheetHeight));
         }
 
         var type = channels == 4 ? MatType.CV_8UC4 : MatType.CV_8UC3;
