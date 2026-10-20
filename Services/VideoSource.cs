@@ -23,7 +23,41 @@ public sealed class VideoSource : IDisposable
         FrameCount = Math.Max(0, capture.FrameCount);
     }
 
+    private int _next;
+
     public VideoInfo Info => new(Width, Height, Fps, FrameCount);
+
+    public int NextIndex => _next;
+
+    public void Seek(int frame)
+    {
+        var limit = FrameCount > 0 ? FrameCount - 1 : int.MaxValue;
+        var target = Math.Clamp(frame, 0, limit);
+        _capture.PosFrames = target;
+        _next = target;
+    }
+
+    public bool Skip()
+    {
+        if (!_capture.Grab())
+        {
+            return false;
+        }
+
+        _next++;
+        return true;
+    }
+
+    public bool ReadInto(Mat target)
+    {
+        if (!_capture.Read(target) || target.Empty())
+        {
+            return false;
+        }
+
+        _next++;
+        return true;
+    }
 
     public static VideoSource Open(string path)
     {

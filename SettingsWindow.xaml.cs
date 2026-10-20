@@ -20,6 +20,7 @@ public partial class SettingsWindow : Window
             _ => 0
         };
 
+        ModelsFolderBox.Text = ModelDownloader.ModelsFolder;
         _ready = true;
     }
 
@@ -53,6 +54,29 @@ public partial class SettingsWindow : Window
         AppSettings.Current.Theme = theme;
         ThemeManager.Apply(theme);
         AppSettings.Current.Save();
+    }
+
+    private void BrowseModelsFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = Loc.Get("ModelsFolder"),
+            InitialDirectory = ModelDownloader.ModelsFolder
+        };
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            AppSettings.Current.ModelsFolder = dialog.FolderName;
+            AppSettings.Current.Save();
+            ModelsFolderBox.Text = ModelDownloader.ModelsFolder;
+        }
+    }
+
+    private void ResetModelsFolder_Click(object sender, RoutedEventArgs e)
+    {
+        AppSettings.Current.ModelsFolder = string.Empty;
+        AppSettings.Current.Save();
+        ModelsFolderBox.Text = ModelDownloader.ModelsFolder;
     }
 
     private void Close_Click(object sender, RoutedEventArgs e)

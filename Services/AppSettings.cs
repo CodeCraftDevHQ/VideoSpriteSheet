@@ -9,6 +9,8 @@ public sealed class AppSettings
 
     public string Theme { get; set; } = "System";
 
+    public string ModelsFolder { get; set; } = string.Empty;
+
     public static AppSettings Current { get; private set; } = new();
 
     private static string FilePath => Path.Combine(

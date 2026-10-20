@@ -31,10 +31,14 @@ public static class ModelCatalog
 
 public static class ModelDownloader
 {
-    public static string ModelsFolder => Path.Combine(
+    public static string DefaultModelsFolder => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "VideoSpriteSheet",
         "models");
+
+    public static string ModelsFolder => string.IsNullOrWhiteSpace(AppSettings.Current.ModelsFolder)
+        ? DefaultModelsFolder
+        : AppSettings.Current.ModelsFolder;
 
     public static string PathFor(ModelEntry entry) => Path.Combine(ModelsFolder, entry.FileName);
 

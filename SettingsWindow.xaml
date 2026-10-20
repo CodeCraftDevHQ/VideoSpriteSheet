@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:VideoSpriteSheet.Services"
         Title="{loc:T Settings}"
-        Width="380" SizeToContent="Height"
+        Width="480" SizeToContent="Height"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
         FlowDirection="{Binding FlowDirection, Source={x:Static loc:Loc.Instance}}"
@@ -16,11 +16,19 @@
         </ComboBox>
 
         <TextBlock Text="{loc:T Theme}" Margin="0,0,0,4"/>
-        <ComboBox x:Name="ThemeCombo" Margin="0,0,0,18" SelectionChanged="Theme_Changed">
+        <ComboBox x:Name="ThemeCombo" Margin="0,0,0,14" SelectionChanged="Theme_Changed">
             <ComboBoxItem Content="{loc:T ThemeSystem}"/>
             <ComboBoxItem Content="{loc:T ThemeLight}"/>
             <ComboBoxItem Content="{loc:T ThemeDark}"/>
         </ComboBox>
+
+        <TextBlock Text="{loc:T ModelsFolder}" Margin="0,0,0,4"/>
+        <DockPanel Margin="0,0,0,4">
+            <Button DockPanel.Dock="Left" Content="{loc:T ResetDefault}" Padding="12,4" Margin="6,0,0,0" Click="ResetModelsFolder_Click"/>
+            <Button DockPanel.Dock="Left" Content="{loc:T Browse}" Padding="12,4" Margin="6,0,0,0" Click="BrowseModelsFolder_Click"/>
+            <TextBox x:Name="ModelsFolderBox" FlowDirection="LeftToRight" IsReadOnly="True"/>
+        </DockPanel>
+        <TextBlock Text="{loc:T ModelsFolderNote}" Foreground="Gray" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,18"/>
 
         <Button Content="{loc:T Close}" HorizontalAlignment="Left" Padding="22,6" Click="Close_Click"/>
     </StackPanel>
