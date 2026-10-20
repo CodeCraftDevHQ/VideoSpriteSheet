@@ -1,63 +1,99 @@
-# VideoSpriteSheet
+<div align="center">
 
-[فارسی](README.fa.md)
+# 🎬 VideoSpriteSheet
 
-A Windows desktop app that turns a video into individual frames, optionally removes the background of every frame with an offline AI model, and packs the result into a sprite sheet (or saves each frame as a separate PNG).
+**A fast, modern Windows desktop app to turn videos into frame sequences and sprite sheets with offline AI background removal.**
 
-## Features
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?logo=windows)](https://www.microsoft.com/windows)
+[![Persian](https://img.shields.io/badge/Language-Persian%20%7C%20English-blue)](#-features)
 
-- Drag & drop a video onto the window, or pick one with the file dialog
-- Built-in video player with a timeline: drag the blue handles to choose the time range to convert (or type start/end seconds)
-- Take one image every N frames
-- Background removal on/off, fully offline (ONNX Runtime, GPU via DirectML with automatic CPU fallback)
-- Save individual PNGs, a sprite sheet, or both; configurable columns, padding and image size
-- Output goes next to the video by default; you can pick any folder
-- Choose where downloaded models are stored (Settings)
-- Persian and English UI, light / dark / system theme
+[فارسی](README.fa.md) • [English](README.md) • [Features](#-features) • [Installation](#-build-and-run) • [Models](#-background-removal-models)
 
-## Requirements
+---
 
-- Windows 10 or 11, x64
-- .NET 10 SDK (to build) / .NET 10 Desktop Runtime (to run)
-- A DirectX 12 capable GPU for GPU acceleration (optional, CPU works too)
+</div>
 
-## Build and run
+## 📌 Overview
 
-Open `VideoSpriteSheet.csproj` in Visual Studio and press F5, or:
+**VideoSpriteSheet** is an intuitive Windows utility built for game developers, animators, and digital creators. It allows you to break down video files into individual PNG frames or compact sprite sheets, featuring built-in, offline AI background removal powered by ONNX Runtime.
 
-```
+---
+
+## ✨ Features
+
+- 🖱️ **Drag & Drop Interface:** Easily load videos directly into the app.
+- 🎞️ **Interactive Timeline:** Fine-tune start/end ranges with visual handles or numerical inputs.
+- ⏱️ **Frame Extraction Control:** Extract every $N^{\text{th}}$ frame to optimize sheet density and animation smoothness.
+- 🤖 **Offline AI Background Removal:** Powered by ONNX Runtime with DirectML GPU acceleration and automatic CPU fallback.
+- 🖼️ **Flexible Export Settings:** Save individual PNG frames, a packed sprite sheet, or both. Customize columns, padding, and frame dimensions.
+- 📁 **Custom Output Location:** Automatically saves next to the source video or to any custom folder.
+- ⚙️ **Storage Control:** Specify custom download directories for AI models.
+- 🌐 **Multi-language & Themes:** Supports English and Persian languages along with Light, Dark, and System themes.
+
+---
+
+## 🛠️ Requirements
+
+- **OS:** Windows 10 or Windows 11 (x64)
+- **Runtime:** [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/) (to run) or **.NET 10 SDK** (to build)
+- **GPU (Optional):** DirectX 12 capable GPU for DirectML hardware acceleration *(CPU fallback is automatically used if no compatible GPU is detected)*.
+
+---
+
+## 🚀 Build and Run
+
+Clone the repository and open `VideoSpriteSheet.csproj` in Visual Studio, then hit `F5`, or use the CLI:
+
+```bash
+# Clone the repository
+git clone https://github.com/your-username/VideoSpriteSheet.git
+
+# Navigate to the directory
+cd VideoSpriteSheet
+
+# Run the application
 dotnet run -c Release
 ```
 
-## Usage
+---
 
-1. Drop a video on the window.
-2. Optionally set the range on the timeline and the "one image every N frames" value.
-3. Open "Advanced background settings", pick a model and press Download (first run only).
-4. Choose whether to save individual images, a sprite sheet, or both, then press Start.
+## 📖 How to Use
 
-## Background removal models
+1. **Import:** Drag & drop a video into the window or select one using the file dialog.
+2. **Trim:** Set your desired segment on the visual timeline and choose the frame extraction step (e.g., *one image every N frames*).
+3. **Background Removal (Optional):** Open *Advanced background settings*, pick an AI model, and download it (required only on the first run).
+4. **Export:** Choose to output individual PNGs, a merged sprite sheet, or both, then click **Start**.
 
-Models are not part of this repository. They are downloaded from Hugging Face on demand and stored in the models folder (Settings).
+---
 
-| Model | License | Notes |
-|---|---|---|
-| [RMBG-1.4](https://huggingface.co/briaai/RMBG-1.4) | bria-rmbg-1.4 (non-commercial) | Small and fast. Not for commercial use. |
-| [BiRefNet Lite](https://huggingface.co/onnx-community/BiRefNet_lite-ONNX) | MIT | Better edges, lighter than the full model |
-| [BiRefNet](https://huggingface.co/onnx-community/BiRefNet-ONNX) | MIT | Best quality, about 973 MB, needs more GPU memory |
+## 🤖 Background Removal Models
 
-Use the "ImageNet" preset for BiRefNet models. Any other ONNX segmentation model that outputs a single-channel mask can be selected manually. Always check the license of a model before using its output commercially.
+Models are not bundled with the application repository to keep the download light. They are fetched directly from Hugging Face on demand and cached locally.
 
-## Third-party components
+| Model | License | Description / Performance |
+| :--- | :--- | :--- |
+| **[RMBG-1.4](https://huggingface.co/briaai/RMBG-1.4)** | `bria-rmbg-1.4` *(Non-Commercial)* | Ultra-fast and lightweight. Great for personal projects. |
+| **[BiRefNet Lite](https://huggingface.co/onnx-community/BiRefNet_lite-ONNX)** | `MIT` | Balanced option with sharp edge detection and moderate resource usage. |
+| **[BiRefNet](https://huggingface.co/onnx-community/BiRefNet-ONNX)** | `MIT` | Highest quality cutouts (~973 MB). Recommended for high VRAM GPUs. |
 
-| Component | License |
-|---|---|
-| [OpenCvSharp](https://github.com/shimat/opencvsharp) | Apache-2.0 |
-| [ONNX Runtime (DirectML)](https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime.DirectML) | See the package page |
-| [Microsoft.AI.DirectML](https://www.nuget.org/packages/Microsoft.AI.DirectML) | See the package page |
+> 💡 **Tip:** Select the **ImageNet** preset for BiRefNet models. Any ONNX segmentation model outputting a single-channel mask is supported manually. Always double-check model licenses before commercial use.
 
-Licenses of NuGet packages can change between versions, so please verify them on the package pages before redistributing binaries.
+---
 
-## License
+## 📦 Third-Party Libraries
 
-The source code of this project is released under the [MIT License](LICENSE). Models and third-party packages keep their own licenses.
+| Component | License | Purpose |
+| :--- | :--- | :--- |
+| **[OpenCvSharp](https://github.com/shimat/opencvsharp)** | Apache-2.0 | Video processing & image manipulation |
+| **[ONNX Runtime (DirectML)](https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime.DirectML)** | Package License | AI model inference engine |
+| **[Microsoft.AI.DirectML](https://www.nuget.org/packages/Microsoft.AI.DirectML)** | Package License | Direct3D 12 hardware acceleration |
+
+*Note: NuGet package licenses may vary across versions. Please verify licensing prior to redistributing binaries.*
+
+---
+
+## 📄 License
+
+This project is licensed under the **[MIT License](LICENSE)**. Third-party packages and AI models maintain their respective licenses.

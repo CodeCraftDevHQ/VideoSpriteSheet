@@ -4,6 +4,7 @@
         xmlns:loc="clr-namespace:VideoSpriteSheet.Services"
         xmlns:ctl="clr-namespace:VideoSpriteSheet.Controls"
         Title="{loc:T AppTitle}"
+        Icon="Assets/app.ico"
         Width="1180" Height="820" MinWidth="980" MinHeight="660"
         FlowDirection="{Binding FlowDirection, Source={x:Static loc:Loc.Instance}}"
         AllowDrop="True"

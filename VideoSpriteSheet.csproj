@@ -1,30 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
-    <PlatformTarget>x64</PlatformTarget>
-    <RootNamespace>VideoSpriteSheet</RootNamespace>
-    <AssemblyName>VideoSpriteSheet</AssemblyName>
-    <NoWarn>$(NoWarn);WPF0001</NoWarn>
-  </PropertyGroup>
+	<PropertyGroup>
+		<ApplicationIcon>Assets\app.ico</ApplicationIcon>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UseWPF>true</UseWPF>
+		<PlatformTarget>x64</PlatformTarget>
+		<RootNamespace>VideoSpriteSheet</RootNamespace>
+		<AssemblyName>VideoSpriteSheet</AssemblyName>
+		<NoWarn>$(NoWarn);WPF0001</NoWarn>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Using Include="System.IO" />
-    <Using Include="System.Net.Http" />
-    <Using Include="System.Threading" />
-    <Using Include="System.Threading.Tasks" />
-    <Using Include="System.Linq" />
-    <Using Include="System.Collections.Generic" />
-  </ItemGroup>
+	<ItemGroup>
+		<Resource Include="Assets\app.ico" />
+		<Using Include="System.IO" />
+		<Using Include="System.Net.Http" />
+		<Using Include="System.Threading" />
+		<Using Include="System.Threading.Tasks" />
+		<Using Include="System.Linq" />
+		<Using Include="System.Collections.Generic" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
-    <PackageReference Include="OpenCvSharp4" Version="4.13.0.20260627" />
-    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.13.0.20260627" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
+		<PackageReference Include="OpenCvSharp4" Version="4.13.0.20260627" />
+		<PackageReference Include="OpenCvSharp4.runtime.win" Version="4.13.0.20260627" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Assets\" />
+	</ItemGroup>
 
 </Project>

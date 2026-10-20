@@ -401,11 +401,10 @@ public partial class MainWindow : Window
 
     private void SyncTimelineFromBoxes()
     {
-        if (Timeline.Duration <= 0)
+        if (Timeline is null || _player is null || Timeline.Duration <= 0)
         {
             return;
         }
-
         if (!ImageHelpers.TryParseTime(StartTimeBox.Text, out var start) || !ImageHelpers.TryParseTime(EndTimeBox.Text, out var end))
         {
             return;
